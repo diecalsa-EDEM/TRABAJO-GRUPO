@@ -17,21 +17,24 @@ from pandas.api.types import CategoricalDtype #For definition of custom categori
 import matplotlib.pyplot as plt
 import seaborn as sns  # For hi level, Pandas oriented, graphics
 import scipy.stats as stats  # For statistical inference 
+from statsmodels.formula.api import ols
+import MDA.graficas as gr
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler, Normalizer
+from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV, StratifiedKFold
+from sklearn.metrics import accuracy_score, confusion_matrix
 
+gr.chdir('/Users/Diego/Desktop/EDEM_DIEGO/02_CURSO/00_REPOSITORIOS/TRABAJO-GRUPO')
 
-
-os.getcwd()
-
-# Change working directory
-os.chdir('/Users/germanvalera/Edem/Fundamentos/Python')
-os.getcwd()
 #Reads data from CSV file and stores it in a dataframe called rentals_2011
 # Pay atention to the specific format of your CSV data (; , or , .)
 stud = pd.read_csv ("stud_per.csv", sep=',', decimal='.')
+stud_ols = pd.read_csv ("stud_per_cat.csv", sep=',', decimal='.')
 stud.shape
 stud.head()
 #QC OK
-
 
 #Section 1. Variable descriptives: Describe numerically / graphically
 #the variables involved in your analyses. Begin always with your
@@ -40,124 +43,39 @@ stud.head()
 #Numericas: Final_grade, ausencias, study_time
 #Nominal: Romantic
 
+# Data cleaning
+stud = stud[stud.school == 'GP']
+stud = stud[stud.final_grade>0]
 
-#---------------------VARIABLE ROMANTIC---------------------------------
-mytable = pd.crosstab(df.romantic, columns="count", normalize='columns')*100
-print(mytable)
-print (round(mytable,1))
-plt.bar(mytable.index, mytable['count'])
-plt.xlabel('Variable: Romantic')
-plt.ylabel('Percentage')
-plt.title('Figure x. Percentage of ROMANTIC ')
-
-
+stud_ols = stud_ols[stud_ols.GP_school == 1]
+stud_ols = stud_ols[stud_ols.final_grade>0]
 
 #---------------------VARIABLE FINAL_GRADE---------------------------------
+gr.histogr(stud.final_grade, nsteps = 20, xlabel = "Frequency", ylabel = "Final grade", title = "Fig. 1: Final grade", source = 'stud_per.csv', legend_position = 'top-left')
 
-new_stud = stud.drop([349])
-res_target_describe = new_stud['final_grade'].describe()
-print(res_target)
-print(res_target_describe)
-
-z = res_target.describe()
-me = res_target_describe[1]
-sde = res_target_describe[2]
-ne = res_target_describe[4]
-
-
-x = stud['final_grade']
-
-plt.hist(x, bins=10, edgecolor='black')
-plt.title('Figure1 . Histogram of students final grade')
-plt.ylabel('Frecuency')
-plt.xlabel('Final Grade')
-plt.xticks(np.arange(0, 22, step=2))
-plt.axvline(x=me,linewidth=1,linestyle= 'solid',color="red", label='Mean')
-plt.axvline(x=me-sde,linewidth=1,linestyle= 'dashed',color="pink", label='- 1 S.D.')
-plt.axvline(x=me + sde,linewidth=1,linestyle= 'dashed',color="pink", label='+ 1 S.D.')
-plt.legend(loc='upper left', bbox_to_anchor=(0.73, 0.98))
-
-
+#---------------------VARIABLE ROMANTIC---------------------------------
+gr.gbarras(stud.romantic, stud.romantic, xlabel = 'Variable: Romantic', ylabel = 'Percentage', title = 'Figure x. Percentage of ROMANTIC ', source = 'stud_per.csv')
 
 #---------------------VARIABLE STUDYTIME---------------------------------
-
-studytime_describe = new_stud['studytime'].describe()
-print(studytime_describe)
-
-z = studytime.describe()
-me = studytime_describe[1]
-sde = studytime_describe[2]
-ne = studytime_describe[4]
-
-#Cambio a nominal
-
-stud.studytime = stud.studytime.replace(to_replace="1 Hora", value="1 Hora")
-stud.studytime = stud.studytime.replace(to_replace="2 Hora", value="2 Horas")
-stud.studytime = stud.studytime.replace(to_replace="3 Hora", value="3 Horas")
-stud.studytime = stud.studytime.replace(to_replace="4 Hora", value="4 Horas")
-
-studytime_describe = new_stud['studytime'].describe()
-
-mytable = pd.crosstab(stud.studytime, columns="count", normalize='columns')*100
-print(mytable)
-print (round(mytable,1))
-plt.bar(mytable.index, mytable['count'])
-plt.xlabel('Variable: STUDYTIME')
-plt.ylabel('Percentage')
-plt.title('Figure x. Percentage of STUDYTIME ')
-
-
-
+gr.gbarras(stud.studytime, stud.studytime, xlabel = 'Variable: studytime', ylabel = 'Percentage', title = 'Figure x. Percentage of studytime ', source = 'stud_per.csv')
 
 #---------------------VARIABLE INTERNET ACCESS ---------------------------------
-
-
-
-res_internet = stud['internet'].describe()
-print(res_internet)
-
-
-mytable_internet = pd.crosstab(index=stud["internet"], columns="count")
-print(mytable_internet)
-
-n = mytable_internet.sum()
-
-mytable_internet2 = (mytable_internet/n)*100 
-mytable_internet2 = (round(mytable_internet2,1))
-
-print(mytable_internet2)
-del (mytable_internet)
-
-plt.bar(mytable_internet2.index, mytable_internet2['count'])
-plt.xlabel('Internet Access')
-plt.ylabel('Number Students ')
-plt.title('Figure X. Percentage of Students with internet access')
-
-
+gr.gbarras(stud.internet, stud.internet, xlabel = 'Variable: internet', ylabel = 'Percentage', title = 'Figure x. Percentage of internet access ', source = 'stud_per.csv', legend_position = 'top-left')
 
 #---------------------VARIABLE ABSENCES ---------------------------------
-
-res_absences = stud['absences'].describe()
-print(res_absences)
+gr.histogr(stud.absences, xlabel = "Frequency", ylabel = "absences", title = "Fig. X: Number of absences", source = 'stud_per.csv', legend_position = 'top-right')
 
 
-z = res_absences.describe()
-me = res_absences[1]
-sde = res_absences[2]
-ne = res_absences[4]
+#Using Pearson Correlation
+plt.figure(figsize=(36,32))
+cor2 = stud_ols.corr()
+sns.heatmap(cor2, vmin=-1, cmap='coolwarm')
+plt.savefig('CorrelationMatrix.pdf')
+plt.show()
 
+model1 = ols('final_grade ~ failures + absences + M_sex + at_home_Mjob + health_Mjob + other_Mjob + services_Mjob + at_home_Fjob + health_Fjob + other_Fjob + services_Fjob',data = stud_ols).fit()
+model1.summary2()
 
-### Recode cnt to string
-stud.loc[  (stud['absences']<(me-sde)) ,"Absences_str"]= "Low absences"
-stud.loc[ ((stud['absences']>=(me-sde)) & (stud['absences']<=(me+sde))) ,"Absences_str"]= "Average absences"
-stud.loc[  (stud['absences']>(me+sde)) ,"Absences_str"]= "High absences"
-
-
-
-#frequencies & barchart
-mytable = pd.crosstab(stud.Absences_str, columns="count", normalize='columns')*100
-print(mytable)
-print (round(mytable,1))
-plt.bar(mytable.index, mytable['count'])
-
-
+for col in stud_ols.columns:
+    model1 = ols('final_grade ~ ' + col,data = stud_ols).fit()
+    print(model1.summary2())
