@@ -27,44 +27,81 @@ from sklearn.model_selection import train_test_split, cross_val_score, GridSearc
 from sklearn.metrics import accuracy_score, confusion_matrix
 import itertools
 
+# Change working directory 
 gr.chdir('/Users/Diego/Desktop/EDEM_DIEGO/02_CURSO/00_REPOSITORIOS/TRABAJO-GRUPO')
 
-#Reads data from CSV file and stores it in a dataframe called rentals_2011
-# Pay atention to the specific format of your CSV data (; , or , .)
+#Reads data from CSV file and stores it in a dataframe 
 stud = pd.read_csv ("stud_per.csv", sep=',', decimal='.')
 stud_ols = pd.read_csv ("stud_per_cat.csv", sep=',', decimal='.')
+
 stud.shape
 stud.head()
+stud.tail()
 #QC OK
 
-#Section 1. Variable descriptives: Describe numerically / graphically
-#the variables involved in your analyses. Begin always with your
-#target variable
+stud_ols.shape
+stud_ols.head()
+stud_ols.tail()
+#QC OK
 
-#Numericas: Final_grade, ausencias, study_time
-#Nominal: Romantic
+# Section 1. Variable descriptives: Describe numerically / graphically
+# the variables involved in your analyses. Begin always with your
+# target variable
+
 
 # Data cleaning
+# We keep only GP students and those who have a final grade > 0
 stud = stud[stud.school == 'GP']
 stud = stud[stud.final_grade>0]
 
 stud_ols = stud_ols[stud_ols.GP_school == 1]
 stud_ols = stud_ols[stud_ols.final_grade>0]
 
+# Graphics
 #---------------------VARIABLE FINAL_GRADE---------------------------------
 gr.histogr(stud.final_grade, nsteps = 10, xlabel = "Frequency", ylabel = "Final grade", title = "Fig. 1: Final grade", source = 'stud_per.csv', legend_position = 'top-left')
 
-#---------------------VARIABLE ROMANTIC---------------------------------
-gr.gbarras(stud.romantic, stud.romantic, xlabel = 'Variable: Romantic', ylabel = 'Percentage', title = 'Figure x. Percentage of ROMANTIC ', source = 'stud_per.csv')
-
-#---------------------VARIABLE STUDYTIME---------------------------------
-gr.gbarras(stud.studytime, stud.studytime, xlabel = 'Variable: studytime', ylabel = 'Percentage', title = 'Figure x. Percentage of studytime ', source = 'stud_per.csv')
-
-#---------------------VARIABLE INTERNET ACCESS ---------------------------------
-gr.gbarras(stud.internet, stud.internet, xlabel = 'Variable: internet', ylabel = 'Percentage', title = 'Figure x. Percentage of internet access ', source = 'stud_per.csv', legend_position = 'top-left')
+#---------------------VARIABLE FAILURES---------------------------------
+gr.gbarras(stud.failures, stud.failures, xlabel = 'Variable: Failures', ylabel = 'Percentage', title = 'Fig. 2: Percentage of failures ', source = 'stud_per.csv')
 
 #---------------------VARIABLE ABSENCES ---------------------------------
-gr.histogr(stud.absences, xlabel = "Frequency", ylabel = "absences", title = "Fig. X: Number of absences", source = 'stud_per.csv', legend_position = 'top-right')
+gr.histogr(stud.absences, xlabel = "Frequency", ylabel = "absences", title = "Fig. 3: Number of absences", source = 'stud_per.csv', legend_position = 'top-right')
+
+#---------------------VARIABLE SEX---------------------------------
+gr.gbarras(stud.sex, stud.sex, xlabel = 'Variable: Failures', ylabel = 'Percentage', title = 'Fig. 2: Percentage of failures ', source = 'stud_per.csv')
+
+#---------------------VARIABLE MJOB---------------------------------
+gr.gbarras(stud.Mjob, stud.Mjob, xlabel = 'Variable: Mjob', ylabel = 'Percentage', title = 'Fig x. Percentage of Mjob ', source = 'stud_per.csv')
+
+#---------------------VARIABLE FJOB---------------------------------
+gr.gbarras(stud.Fjob, stud.Fjob, xlabel = 'Variable: Fjob', ylabel = 'Percentage', title = 'Fig x. Percentage of Fjob ', source = 'stud_per.csv')
+
+#---------------------VARIABLE MEDU---------------------------------
+gr.gbarras(stud.Medu, stud.Medu, xlabel = 'Variable: Medu', ylabel = 'Percentage', title = 'Fig x. Percentage of Medu ', source = 'stud_per.csv')
+
+#---------------------VARIABLE FEDU---------------------------------
+gr.gbarras(stud.Fedu, stud.Fedu, xlabel = 'Variable: Fedu', ylabel = 'Percentage', title = 'Fig x. Percentage of Fedu ', source = 'stud_per.csv')
+
+#---------------------VARIABLE STUDYTIME---------------------------------
+gr.gbarras(stud.studytime, stud.studytime, xlabel = 'Variable: studytime', ylabel = 'Percentage', title = 'Fig. x: Percentage of studytime ', source = 'stud_per.csv')
+
+#---------------------VARIABLE SCHOOLSUP---------------------------------
+gr.gbarras(stud.schoolsup, stud.schoolsup, xlabel = 'Variable: schoolsup', ylabel = 'Percentage', title = 'Fig. x: Percentage of shoolsup', source = 'stud_per.csv', legend_position = 'top-right')
+
+#---------------------VARIABLE GOOUT---------------------------------
+gr.gbarras(stud.goout, stud.goout, xlabel = 'Variable: goout', ylabel = 'Percentage', title = 'Fig. x: Percentage of goout ', source = 'stud_per.csv', legend_position = 'top-left')
+
+#---------------------VARIABLE HIGHER---------------------------------
+gr.gbarras(stud.higher, stud.higher, xlabel = 'Variable: higher', ylabel = 'Percentage', title = 'Fig. x: Percentage of higher ', source = 'stud_per.csv', legend_position = 'top-left')
+
+#---------------------VARIABLE FREETIME---------------------------------
+gr.gbarras(stud.freetime, stud.freetime, xlabel = 'Variable: freetime', ylabel = 'Percentage', title = 'Fig. x: Percentage of freetime ', source = 'stud_per.csv', legend_position = 'top-left')
+
+#---------------------VARIABLE DALC---------------------------------
+gr.gbarras(stud.Dalc, stud.Dalc, xlabel = 'Variable: Dalc', ylabel = 'Percentage', title = 'Fig. x: Percentage of Dalc ', source = 'stud_per.csv', legend_position = 'top-right')
+
+#---------------------VARIABLE WALC---------------------------------
+gr.gbarras(stud.Walc, stud.Walc, xlabel = 'Variable: Walc', ylabel = 'Percentage', title = 'Fig. x: Percentage of Walc ', source = 'stud_per.csv', legend_position = 'top-right')
 
 
 #Using Pearson Correlation
@@ -87,56 +124,30 @@ for col in stud_ols.columns:
         print('P-value: ', model1.pvalues[1])
 
 
-combinations = combinations[1::]
-for i in combinations:
-    colnames = ''
-    for colname in i:
-        if colname != 'final_grade':
-            colnames = colnames + '+' + colname
-    model1 = ols('final_grade ~ ' + colnames,data = stud_ols).fit()
-    model1.summary2()
+#combinations = combinations[1::]
+#for i in combinations:
+#    colnames = ''
+#    for colname in i:
+#        if colname != 'final_grade':
+#            colnames = colnames + '+' + colname
+#    model1 = ols('final_grade ~ ' + colnames,data = stud_ols).fit()
+#    model1.summary2()
 
-a = model1.pvalues[1::]
-counter = 0
-cols2 = cols
-for i in model1.pvalues[1::]:
-    if i > 0.05:
-        cols2.remove(a.index[counter])
-    counter+=1
+colsdef = model1.pvalues[1::]
+colsdef = colsdef[colsdef<0.05]
 
 colnames = ''
-for colname in cols:
+for colname in colsdef.index:
     colnames = colnames + '+' + colname
 model1 = ols('final_grade ~ ' + colnames,data = stud_ols).fit()
 model1.summary2()
 
 
-model1 = ols('final_grade ~ failures + absences + F_sex + services_Mjob + teacher_Fjob + studytime_2 + yes_schoolsup + goout_2 + Walc_4',data = stud_ols).fit()
+model1 = ols('final_grade ~ failures + absences + health_Mjob + services_Mjob + teacher_Fjob + studytime_2 + yes_schoolsup + Walc_4',data = stud_ols).fit()
 model1.summary2()
 
-combinations = []
-for L in range(0, len(cols)+1):
-    for subset in itertools.combinations(cols, L):
-        combinations.append(subset)
-        print(subset)
 
-#        cols.remove(i)
-        
-#from sklearn.preprocessing import MinMaxScaler
-#
-#scaler = MinMaxScaler(feature_range=[-1, 1]) 
-#stud_ols_scaled = scaler.fit_transform(stud_ols)
-#
-##Ajustando el PCA con nuestros datos
-#pca = PCA().fit(stud_ols_scaled)
-##Gráfica de la suma acumulativa de la varianza explicada
-#plt.figure()
-#plt.grid()
-#plt.plot(np.cumsum(pca.explained_variance_ratio_))
-#plt.xlabel('Número de Componentes')
-#plt.xticks(np.arange(0,80,4))
-#plt.yticks(np.arange(0,1,0.05))
-#plt.ylabel('Varianza (%)') #para cada componente
-#plt.title('Student final grades Dataset Explained Variance')
-#plt.show()
+
+
+
 
