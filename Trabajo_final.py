@@ -25,6 +25,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV, StratifiedKFold
 from sklearn.metrics import accuracy_score, confusion_matrix
+import itertools
 
 gr.chdir('/Users/Diego/Desktop/EDEM_DIEGO/02_CURSO/00_REPOSITORIOS/TRABAJO-GRUPO')
 
@@ -51,7 +52,7 @@ stud_ols = stud_ols[stud_ols.GP_school == 1]
 stud_ols = stud_ols[stud_ols.final_grade>0]
 
 #---------------------VARIABLE FINAL_GRADE---------------------------------
-gr.histogr(stud.final_grade, nsteps = 20, xlabel = "Frequency", ylabel = "Final grade", title = "Fig. 1: Final grade", source = 'stud_per.csv', legend_position = 'top-left')
+gr.histogr(stud.final_grade, nsteps = 10, xlabel = "Frequency", ylabel = "Final grade", title = "Fig. 1: Final grade", source = 'stud_per.csv', legend_position = 'top-left')
 
 #---------------------VARIABLE ROMANTIC---------------------------------
 gr.gbarras(stud.romantic, stud.romantic, xlabel = 'Variable: Romantic', ylabel = 'Percentage', title = 'Figure x. Percentage of ROMANTIC ', source = 'stud_per.csv')
@@ -73,9 +74,69 @@ sns.heatmap(cor2, vmin=-1, cmap='coolwarm')
 plt.savefig('CorrelationMatrix.pdf')
 plt.show()
 
-model1 = ols('final_grade ~ failures + absences + M_sex + at_home_Mjob + health_Mjob + other_Mjob + services_Mjob + at_home_Fjob + health_Fjob + other_Fjob + services_Fjob',data = stud_ols).fit()
+
+# Buscamos las variables con una correlación significativa con final_grade (p-value<0.05)
+cols=[]
+for col in stud_ols.columns:
+    if col != 'final_grade':
+        model1 = ols('final_grade ~ ' + col,data = stud_ols).fit()
+        summary = model1.summary2()
+        if model1.pvalues[1]<0.05:
+            cols.append(col)
+        print(summary)
+        print('P-value: ', model1.pvalues[1])
+
+
+combinations = combinations[1::]
+for i in combinations:
+    colnames = ''
+    for colname in i:
+        if colname != 'final_grade':
+            colnames = colnames + '+' + colname
+    model1 = ols('final_grade ~ ' + colnames,data = stud_ols).fit()
+    model1.summary2()
+
+a = model1.pvalues[1::]
+counter = 0
+cols2 = cols
+for i in model1.pvalues[1::]:
+    if i > 0.05:
+        cols2.remove(a.index[counter])
+    counter+=1
+
+colnames = ''
+for colname in cols:
+    colnames = colnames + '+' + colname
+model1 = ols('final_grade ~ ' + colnames,data = stud_ols).fit()
 model1.summary2()
 
-for col in stud_ols.columns:
-    model1 = ols('final_grade ~ ' + col,data = stud_ols).fit()
-    print(model1.summary2())
+
+model1 = ols('final_grade ~ failures + absences + F_sex + services_Mjob + teacher_Fjob + studytime_2 + yes_schoolsup + goout_2 + Walc_4',data = stud_ols).fit()
+model1.summary2()
+
+combinations = []
+for L in range(0, len(cols)+1):
+    for subset in itertools.combinations(cols, L):
+        combinations.append(subset)
+        print(subset)
+
+#        cols.remove(i)
+        
+#from sklearn.preprocessing import MinMaxScaler
+#
+#scaler = MinMaxScaler(feature_range=[-1, 1]) 
+#stud_ols_scaled = scaler.fit_transform(stud_ols)
+#
+##Ajustando el PCA con nuestros datos
+#pca = PCA().fit(stud_ols_scaled)
+##Gráfica de la suma acumulativa de la varianza explicada
+#plt.figure()
+#plt.grid()
+#plt.plot(np.cumsum(pca.explained_variance_ratio_))
+#plt.xlabel('Número de Componentes')
+#plt.xticks(np.arange(0,80,4))
+#plt.yticks(np.arange(0,1,0.05))
+#plt.ylabel('Varianza (%)') #para cada componente
+#plt.title('Student final grades Dataset Explained Variance')
+#plt.show()
+
